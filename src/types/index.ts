@@ -19,6 +19,7 @@ export interface ShelfBook {
   readingTime: string
   discussionDate: string
   description: string
+  slug?: string
 }
 
 export interface FinishedBook {
@@ -27,6 +28,7 @@ export interface FinishedBook {
   discussionDate: string
   rating: string
   quote: string
+  slug?: string
 }
 
 export interface JourneyItem {

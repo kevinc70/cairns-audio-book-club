@@ -7,10 +7,18 @@ interface BookCoverListProps {
 }
 
 export default function BookCoverList({ items }: BookCoverListProps) {
+  if (items.length === 0) {
+    return <div className="book-cover-list empty-state">No books are available right now.</div>
+  }
+
   return (
     <div className="book-cover-list" role="list">
       {items.map((item) => (
-        <Link key={item.title} to="/book/the-hobbit" className="book-cover-card" role="listitem">
+        <Link
+          key={item.slug ?? item.title}
+          to={item.slug ? `/book/${item.slug}` : '/'}
+          className="book-cover-card"
+          role="listitem">
           <div className="book-cover-placeholder" aria-hidden="true">
             <span>Book cover</span>
           </div>
@@ -33,23 +41,6 @@ export default function BookCoverList({ items }: BookCoverListProps) {
           </div>
         </Link>
       ))}
-
-      <article className="book-cover-card add-book-card" role="listitem">
-        <div className="book-cover-placeholder add-cover" aria-hidden="true">
-          <span>Add Book</span>
-        </div>
-        <div className="book-cover-meta">
-          <h3>Add your next adventure</h3>
-          <p className="book-author">A new story waiting on the shelf.</p>
-          <div className="book-cover-details add-details">
-            <span>Pick a title</span>
-            <span>Plan a discussion</span>
-          </div>
-          <p className="book-cover-description">
-            Keep our shelf full of stories everyone is excited to listen to.
-          </p>
-        </div>
-      </article>
     </div>
   )
 }

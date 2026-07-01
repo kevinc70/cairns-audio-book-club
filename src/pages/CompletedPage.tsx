@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { AppShell } from '../components/layout/AppShell'
-import BookCoverList from '../components/books/BookCoverList'
+import { FinishedBooks } from '../components/books/FinishedBooks'
 import { supabase } from '../lib/supabase'
-import type { ShelfBook } from '../types'
+import type { FinishedBook } from '../types'
 
-export function LibraryPage() {
-  const [books, setBooks] = useState<ShelfBook[]>([])
+export function CompletedPage() {
+  const [books, setBooks] = useState<FinishedBook[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -16,11 +16,12 @@ export function LibraryPage() {
 
       const { data, error } = await supabase
         .from('books')
-        .select('title,author,slug,genre,summary,family_rating,discussion_date,runtime,status')
-        .order('title', { ascending: true })
+        .select('title,author,discussion_date,genre,family_rating,summary,slug')
+        .eq('status', 'completed')
+        .order('discussion_date', { ascending: false })
 
       if (error) {
-        setError('Unable to load library books from Supabase.')
+        setError('Unable to load completed books from Supabase.')
         setLoading(false)
         return
       }
@@ -29,10 +30,9 @@ export function LibraryPage() {
         (data ?? []).map((book: any) => ({
           title: book.title,
           author: book.author,
-          rating: book.family_rating ? `${book.family_rating.toFixed(1)} ★` : '',
-          readingTime: book.runtime ? `${Math.floor(book.runtime / 60)} hr ${book.runtime % 60} min` : '',
           discussionDate: book.discussion_date ?? '',
-          description: `${book.genre ?? ''}${book.summary ? ` · ${book.summary}` : ''}`,
+          rating: book.family_rating ? `${book.family_rating.toFixed(1)} ★` : '',
+          quote: book.summary ?? '',
           slug: book.slug,
         }))
       )
@@ -46,17 +46,16 @@ export function LibraryPage() {
     <AppShell>
       <section className="page-section">
         <header className="page-header">
-          <p className="eyebrow">Library</p>
-          <h1>All the stories we’re collecting.</h1>
-          <p className="intro-text">A calm, family-first view of our audiobook shelf.</p>
+          <p className="eyebrow">Completed</p>
+          <h1>Stories our family has finished together.</h1>
+          <p className="intro-text">A growing collection of completed audiobooks from the Supabase library.</p>
         </header>
-
         {loading ? (
-          <p>Loading library...</p>
+          <p>Loading completed books...</p>
         ) : error ? (
           <p className="error-text">{error}</p>
         ) : (
-          <BookCoverList items={books} />
+          <FinishedBooks books={books} />
         )}
       </section>
     </AppShell>

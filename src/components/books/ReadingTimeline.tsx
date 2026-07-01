@@ -12,23 +12,27 @@ export function ReadingTimeline({ items }: ReadingTimelineProps) {
         <p className="eyebrow">Reading journey</p>
         <h2>Books that shaped our listening year</h2>
       </div>
-      <div className="timeline-track">
-        {items.map((item) => (
-          <article key={item.title} className="timeline-card">
-            <div className="timeline-year">{item.year}</div>
-            <div className="timeline-body">
-              <h3>{item.title}</h3>
-              <div className="timeline-meta">
-                <Star size={14} />
-                <span>{item.rating}</span>
-                <CalendarDays size={14} />
-                <span>{item.discussionDate}</span>
+      {items.length === 0 ? (
+        <p className="empty-state">No timeline entries are available yet.</p>
+      ) : (
+        <div className="timeline-track">
+          {items.map((item) => (
+            <article key={item.title} className="timeline-card">
+              <div className="timeline-year">{item.year}</div>
+              <div className="timeline-body">
+                <h3>{item.title}</h3>
+                <div className="timeline-meta">
+                  <Star size={14} />
+                  <span>{item.rating}</span>
+                  <CalendarDays size={14} />
+                  <span>{item.discussionDate}</span>
+                </div>
+                <p>{item.notes}</p>
               </div>
-              <p>{item.notes}</p>
-            </div>
-          </article>
-        ))}
-      </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   )
 }

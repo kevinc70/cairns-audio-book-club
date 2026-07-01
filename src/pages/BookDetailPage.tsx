@@ -23,135 +23,47 @@ import type {
   JourneyItem,
 } from '../types'
 
-const progressInfo: ProgressInfo = {
-  complete: 82,
-  lastListened: 'Yesterday',
-  timeRemaining: '6 hr 12 min',
+function formatDate(date: string | null | undefined) {
+  if (!date) return 'TBD'
+  const parsed = new Date(date)
+  if (Number.isNaN(parsed.getTime())) return 'TBD'
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-const ratings: RatingReview[] = [
-  {
-    name: 'Kevin',
-    initial: 'K',
-    rating: '★★★★★',
-    review: 'My favourite chapter was the dragon encounter—it felt cinematic and warm.',
-  },
-  {
-    name: 'Emma',
-    initial: 'E',
-    rating: '★★★★☆',
-    review: 'The dragon scenes were incredible, and the narration felt so cozy.',
-  },
-  {
-    name: 'Liam',
-    initial: 'L',
-    rating: '★★★★★',
-    review: 'I want to read it again; the story feels like a timeless adventure.',
-  },
-]
-
-const quotes: QuoteItem[] = [
-  {
-    text: 'It does not do to leave a live dragon out of your calculations.',
-    source: '— J.R.R. Tolkien',
-  },
-  {
-    text: 'There is nothing like looking, if you want to find something.',
-    source: '— J.R.R. Tolkien',
-  },
-]
-
-const discussionNote: DiscussionNote = {
-  title: 'Family Discussion Notes',
-  blocks: [
-    { type: 'heading', text: 'Memorable moments' },
-    {
-      type: 'paragraph',
-      text: 'We loved the warmth of the story, the sense of journey, and the bond between the characters.',
-    },
-    { type: 'heading', text: 'Highlights' },
-    {
-      type: 'list',
-      text: [
-        'The dragon scene was unforgettable',
-        'The humor in the hobbit village felt like home',
-        'The narration added softness to every scene',
-      ],
-    },
-    { type: 'paragraph', text: 'We agreed this listen felt like a family adventure, one we can return to again and again.' },
-  ],
+function formatRuntime(runtime: number | null | undefined) {
+  if (!runtime && runtime !== 0) return 'Unknown'
+  const hours = Math.floor(runtime / 60)
+  const minutes = runtime % 60
+  return hours > 0 ? `${hours} hr ${minutes} min` : `${minutes} min`
 }
 
-const photos: PhotoItem[] = [
-  { id: '1' },
-  { id: '2' },
-  { id: '3' },
-  { id: '4' },
-]
-
-const facts: BookFactsInfo = {
-  author: 'J.R.R. Tolkien',
-  narrator: 'Andy Serkis',
-  publisher: 'HarperCollins',
-  runtime: '11 hr 32 min',
-  genre: 'Fantasy',
-  releaseYear: '1937',
-  isbn: '978-0261103344',
+function formatRating(familyRating: number | null | undefined) {
+  if (!familyRating && familyRating !== 0) return '★' 
+  return `${familyRating.toFixed(1)} ★`
 }
-
-const relatedBooks: ShelfBook[] = [
-  {
-    title: 'The Night Circus',
-    author: 'Erin Morgenstern',
-    rating: '4.9',
-    readingTime: '9 hrs',
-    discussionDate: 'Aug 2',
-    description: 'A luminous tale of wonder, magic, and family promise.',
-  },
-  {
-    title: 'The Paper Garden',
-    author: 'Julia Glass',
-    rating: '4.7',
-    readingTime: '8 hrs',
-    discussionDate: 'Sept 7',
-    description: 'A gentle story of family, memory, and quiet light.',
-  },
-]
-
-const journeyItems: JourneyItem[] = [
-  {
-    year: 'Previous',
-    title: 'Under the Elm Tree',
-    discussionDate: 'May 22',
-    notes: 'A warm intro to our current listening season.',
-    rating: '★★★★★',
-  },
-  {
-    year: 'Current',
-    title: 'The Hobbit',
-    discussionDate: 'May 2',
-    notes: 'The family favorite adventure in focus.',
-    rating: '★★★★★',
-  },
-  {
-    year: 'Next',
-    title: 'The Night Circus',
-    discussionDate: 'Aug 2',
-    notes: 'A dreamy next listen reserved for summer evenings.',
-    rating: '★★★★☆',
-  },
-]
 
 export function BookDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [currentBook, setCurrentBook] = useState<HeroBook | null>(null)
+  const [progressInfo, setProgressInfo] = useState<ProgressInfo>({
+    complete: 0,
+    lastListened: '',
+    timeRemaining: '',
+  })
+  const [ratings, setRatings] = useState<RatingReview[]>([])
+  const [quotes, setQuotes] = useState<QuoteItem[]>([])
+  const [discussionNote, setDiscussionNote] = useState<DiscussionNote | null>(null)
+  const [photos, setPhotos] = useState<PhotoItem[]>([])
+  const [facts, setFacts] = useState<BookFactsInfo | null>(null)
+  const [relatedBooks, setRelatedBooks] = useState<ShelfBook[]>([])
+  const [journeyItems, setJourneyItems] = useState<JourneyItem[]>([])
+  const [participantsCount, setParticipantsCount] = useState(0)
+  const [recommendedBy, setRecommendedBy] = useState('Unknown')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchBook = async () => {
-      console.log('BookDetail slug:', id)
-
       if (!id) {
         setError('No book selected.')
         setLoading(false)
@@ -161,43 +73,172 @@ export function BookDetailPage() {
       setError(null)
       setLoading(true)
 
-      const { data, error: fetchError } = await supabase
+      const { data: book, error: bookError } = await supabase
         .from('books')
         .select(
-          'title, author, rating, genre, length, narrator, started_date, finished_date, discussion_date, family_rating, summary, progress'
+          'id,slug,title,author,genre,summary,family_rating,progress,status,started_date,completed_date,discussion_date,runtime,narrator,publisher,isbn'
         )
         .eq('slug', id)
         .single()
 
-      console.log('Supabase book data:', data)
-      console.log('Supabase book error:', fetchError)
-
-      if (fetchError) {
+      if (bookError) {
         setError('Unable to load this book. Please try again later.')
         setLoading(false)
         return
       }
 
-      if (!data) {
+      if (!book) {
         setError('Book not found. Please select another title.')
         setLoading(false)
         return
       }
 
+      const bookId = book.id
+
+      const [quoteResult, meetingResult, relatedResult, memberStatusResult, membersResult] = await Promise.all([
+        supabase.from('quotes').select('quote,page,member_id').eq('book_id', bookId),
+        supabase
+          .from('discussion_meetings')
+          .select('scheduled_for,notes,location,meeting_link')
+          .eq('book_id', bookId),
+        supabase
+          .from('books')
+          .select('title,author,genre,summary,family_rating,progress,discussion_date,runtime,slug')
+          .neq('id', bookId)
+          .eq('genre', book.genre)
+          .limit(4),
+        supabase
+          .from('member_book_status')
+          .select('member_id,finished,updated_at')
+          .eq('book_id', bookId),
+        supabase.from('family_members').select('id,name'),
+      ])
+
+      const quoteRows = quoteResult.data ?? []
+      const meetings = meetingResult.data ?? []
+      const relatedBooksRows = relatedResult.data ?? []
+      const memberStatuses = memberStatusResult.data ?? []
+      const members = membersResult.data ?? []
+      const memberMap = new Map((members as any[]).map((member: any) => [member.id, member.name]))
+
       setCurrentBook({
-        title: data.title,
-        author: data.author,
-        rating: data.rating,
-        genre: data.genre,
-        length: data.length,
-        narrator: data.narrator,
-        startedDate: data.started_date,
-        finishedDate: data.finished_date,
-        discussionDate: data.discussion_date,
-        familyRating: data.family_rating,
-        progress: data.progress,
-        summary: data.summary,
+        title: book.title,
+        author: book.author,
+        rating: formatRating(book.family_rating),
+        genre: book.genre ?? '',
+        startedDate: formatDate(book.started_date),
+        finishedDate: formatDate(book.completed_date),
+        discussionDate: formatDate(book.discussion_date),
+        progress: Number(book.progress ?? 0),
+        summary: book.summary ?? '',
+        length: formatRuntime(book.runtime),
+        narrator: book.narrator ?? '',
+        familyRating: book.family_rating ? book.family_rating.toFixed(1) : '',
       })
+
+      setProgressInfo({
+        complete: Number(book.progress ?? 0),
+        lastListened: formatDate(book.discussion_date),
+        timeRemaining:
+          book.runtime && book.progress
+            ? `${Math.max(0, Math.round(((book.runtime * (100 - book.progress)) / 100) / 60))} hr`
+            : 'Unknown',
+      })
+
+      setQuotes(
+        (quoteRows as any[]).map((quote: any) => ({
+          text: quote.quote,
+          source: `— ${memberMap.get(quote.member_id) ?? 'Family member'}`,
+        }))
+      )
+
+      setDiscussionNote(
+        meetings.length > 0
+          ? {
+              title: 'Discussion notes',
+              blocks: [
+                { type: 'heading', text: 'Upcoming meeting' },
+                {
+                  type: 'paragraph',
+                  text: meetings[0].notes || 'A great moment to reflect on the story together.',
+                },
+                {
+                  type: 'list',
+                  text: [
+                    `Scheduled for ${formatDate(meetings[0].scheduled_for)}`,
+                    meetings[0].location ? `Location: ${meetings[0].location}` : 'Location TBD',
+                    meetings[0].meeting_link ? `Link: ${meetings[0].meeting_link}` : 'Link not set yet',
+                  ],
+                },
+              ],
+            }
+          : {
+              title: 'Discussion notes',
+              blocks: [
+                { type: 'paragraph', text: 'No discussion meeting has been scheduled yet. Check back after your next session.' },
+              ],
+            }
+      )
+
+      setPhotos([
+        { id: `cover-${book.slug}` },
+        { id: `discussion-${book.id}` },
+        { id: `member-${book.id}` },
+        { id: `note-${book.id}` },
+      ])
+
+      setFacts({
+        author: book.author ?? 'Unknown',
+        narrator: book.narrator ?? 'Unknown narrator',
+        publisher: book.publisher ?? 'Unknown publisher',
+        runtime: formatRuntime(book.runtime),
+        genre: book.genre ?? 'Unknown',
+        releaseYear: book.completed_date ? new Date(book.completed_date).getFullYear().toString() : 'N/A',
+        isbn: book.isbn ?? 'N/A',
+      })
+
+      setParticipantsCount(members.length)
+      setRecommendedBy(members.length > 0 ? 'Family' : 'Unknown')
+
+      setRelatedBooks(
+        (relatedBooksRows as any[]).map((related: any) => ({
+          title: related.title,
+          author: related.author,
+          rating: formatRating(related.family_rating),
+          readingTime: formatRuntime(related.runtime),
+          discussionDate: formatDate(related.discussion_date),
+          description: related.summary ?? 'A similar story from your shelf.',
+          slug: related.slug,
+        }))
+      )
+
+      const finishedMemberNames = (memberStatuses as any[])
+        .filter((status) => status.finished)
+        .map((status) => memberMap.get(status.member_id) ?? 'Family member')
+
+      setRatings(
+        finishedMemberNames.length > 0
+          ? finishedMemberNames.map((name) => ({
+              name,
+              initial: name.slice(0, 1),
+              rating: formatRating(book.family_rating),
+              review: `Loved ${book.title} as a ${book.genre?.toLowerCase()} adventure with the family.`,
+            }))
+          : []
+      )
+
+      setJourneyItems(
+        meetings.length > 0
+          ? (meetings as any[]).map((meeting) => ({
+              year: meeting.scheduled_for ? new Date(meeting.scheduled_for).getFullYear().toString() : 'Upcoming',
+              title: book.title,
+              discussionDate: formatDate(meeting.scheduled_for),
+              notes: meeting.notes ?? 'A family discussion is planned around this book.',
+              rating: formatRating(book.family_rating),
+            }))
+          : []
+      )
+
       setLoading(false)
     }
 
@@ -245,11 +286,15 @@ export function BookDetailPage() {
               <p className="eyebrow">Our ratings</p>
               <h2>What our family said about this listen.</h2>
             </div>
-            <div className="ratings-grid">
-              {ratings.map((review) => (
-                <RatingCard key={review.name} review={review} />
-              ))}
-            </div>
+            {ratings.length === 0 ? (
+              <p className="empty-state">No ratings have been added yet.</p>
+            ) : (
+              <div className="ratings-grid">
+                {ratings.map((review) => (
+                  <RatingCard key={review.name} review={review} />
+                ))}
+              </div>
+            )}
           </section>
         </div>
 
@@ -258,19 +303,23 @@ export function BookDetailPage() {
             <p className="eyebrow">Favourite quotes</p>
             <h2>Lines we want to remember.</h2>
           </div>
-          <div className="quotes-grid">
-            {quotes.map((quote) => (
-              <QuoteCard key={quote.text} quote={quote} />
-            ))}
-          </div>
+          {quotes.length === 0 ? (
+            <p className="empty-state">No quotes have been saved for this title yet.</p>
+          ) : (
+            <div className="quotes-grid">
+              {quotes.map((quote) => (
+                <QuoteCard key={quote.text} quote={quote} />
+              ))}
+            </div>
+          )}
         </section>
 
-        <DiscussionCard note={discussionNote} />
+        {discussionNote && <DiscussionCard note={discussionNote} />}
 
         <section className="video-section">
           <div className="section-trailer">
             <p className="eyebrow">Video discussion</p>
-            <h2>Family Discussion • April 12, 2026</h2>
+            <h2>Family Discussion • {currentBook.discussionDate}</h2>
           </div>
           <div className="video-card" aria-hidden="true">
             <div className="video-thumbnail">
@@ -282,7 +331,7 @@ export function BookDetailPage() {
         <PhotoGallery photos={photos} />
 
         <div className="details-and-related">
-          <BookFacts facts={facts} />
+          {facts && <BookFacts facts={facts} />}
           <RelatedBooks books={relatedBooks} />
         </div>
 
@@ -293,19 +342,19 @@ export function BookDetailPage() {
           <div className="footer-grid">
             <div>
               <p className="footer-label">Date started</p>
-              <p>March 12</p>
+              <p>{currentBook.startedDate}</p>
             </div>
             <div>
               <p className="footer-label">Date finished</p>
-              <p>April 28</p>
+              <p>{currentBook.finishedDate}</p>
             </div>
             <div>
               <p className="footer-label">Recommended by</p>
-              <p>Emma</p>
+              <p>{recommendedBy}</p>
             </div>
             <div>
               <p className="footer-label">Participants</p>
-              <p>4 family members</p>
+              <p>{participantsCount > 0 ? `${participantsCount} family members` : 'No participants listed'}</p>
             </div>
           </div>
         </footer>

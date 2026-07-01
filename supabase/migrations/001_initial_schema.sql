@@ -84,7 +84,7 @@ insert into family_members (id, name, avatar, color) values
 
 insert into books (id, slug, title, author, genre, status, progress, family_rating)
 values
-  (gen_random_uuid(), 'the-hobbit', 'The Hobbit', 'J.R.R. Tolkien', 'Fantasy', 'completed', 100, 4.8);
+  (gen_random_uuid(), 'sample-book', 'Sample Book', 'Sample Author', 'Memoir', 'want_to_read', 0, 0.0);
 
 insert into member_book_status (id, member_id, book_id, available, on_hold, wait_weeks, borrowed, started, finished, personal_rating, notes)
 select gen_random_uuid(), m.id, b.id, true, false, null, false, true, true, null, null

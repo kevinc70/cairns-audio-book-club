@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { BookOpen, Clock3, Heart, Sparkles } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { HeroSection } from '../components/ui/HeroSection'
@@ -7,158 +8,219 @@ import { FinishedBooks } from '../components/books/FinishedBooks'
 import { ReadingTimeline } from '../components/books/ReadingTimeline'
 import { ActivityFeed } from '../components/books/ActivityFeed'
 import { StatsCard } from '../components/stats/StatsCard'
+import { supabase } from '../lib/supabase'
 import type { Member, ShelfBook, FinishedBook, JourneyItem, ActivityItem, HeroBook } from '../types'
+import type { ReactNode } from 'react'
 
-const currentBook: HeroBook = {
-  title: 'The Hobbit',
-  author: 'J.R.R. Tolkien',
-  rating: '★★★★★',
-  startedDate: 'March 12',
-  discussionDate: 'July 15',
-  progress: 82,
-  summary:
-    'A cinematic family adventure that brings magic, warmth, and wonder to every listening hour.',
+type StatItem = {
+  icon: ReactNode
+  label: string
+  value: string
 }
 
-const familyMembers: Member[] = [
-  {
-    name: 'Kevin',
-    initial: 'K',
-    booksCompleted: 14,
-    favoriteGenre: 'Fantasy',
-    currentlyListening: 'The Hobbit',
-  },
-  {
-    name: 'Emma',
-    initial: 'E',
-    booksCompleted: 18,
-    favoriteGenre: 'Historical Fiction',
-    currentlyListening: 'The Night Circus',
-  },
-  {
-    name: 'Liam',
-    initial: 'L',
-    booksCompleted: 11,
-    favoriteGenre: 'Sci-Fi',
-    currentlyListening: 'Project Hail Mary',
-  },
-]
+const emptyStats: StatItem[] = []
 
-const nextAdventures: ShelfBook[] = [
-  {
-    title: 'The Night Circus',
-    author: 'Erin Morgenstern',
-    rating: '4.9',
-    readingTime: '9 hrs',
-    discussionDate: 'Aug 2',
-    description: 'A luminous tale of wonder, magic, and family promise.',
-  },
-  {
-    title: 'Project Hail Mary',
-    author: 'Andy Weir',
-    rating: '4.8',
-    readingTime: '11 hrs',
-    discussionDate: 'Aug 18',
-    description: 'A thrilling science adventure for curious ears.',
-  },
-  {
-    title: 'The Paper Garden',
-    author: 'Julia Glass',
-    rating: '4.7',
-    readingTime: '8 hrs',
-    discussionDate: 'Sept 7',
-    description: 'A gentle story of family, memory, and quiet light.',
-  },
-]
+function formatDate(date: string | null | undefined) {
+  if (!date) return 'TBD'
+  const parsed = new Date(date)
+  if (Number.isNaN(parsed.getTime())) return 'TBD'
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
 
-const finishedBooks: FinishedBook[] = [
-  {
-    title: 'Under the Elm Tree',
-    author: 'A. Townsend',
-    discussionDate: 'May 22',
-    rating: '★★★★★',
-    quote: '“A story that felt like home from the first page.”',
-  },
-  {
-    title: 'Evenings at the Lake',
-    author: 'N. Beckett',
-    discussionDate: 'April 9',
-    rating: '★★★★★',
-    quote: '“Beautifully told and unforgettable together.”',
-  },
-]
+function formatRuntime(runtime: number | null | undefined) {
+  if (!runtime && runtime !== 0) return 'Unknown'
+  const hours = Math.floor(runtime / 60)
+  const minutes = runtime % 60
+  return hours > 0 ? `${hours} hr ${minutes} min` : `${minutes} min`
+}
 
-const journeyItems: JourneyItem[] = [
-  {
-    year: '2025',
-    title: 'Under the Elm Tree',
-    discussionDate: 'May 22',
-    notes: 'A family favorite for its warmth, humor, and unforgettable characters.',
-    rating: '★★★★★',
-  },
-  {
-    year: '2024',
-    title: 'Evenings at the Lake',
-    discussionDate: 'April 9',
-    notes: 'The perfect slow listen for cozy nights and long talks.',
-    rating: '★★★★★',
-  },
-  {
-    year: '2023',
-    title: 'The Paper Garden',
-    discussionDate: 'Dec 14',
-    notes: 'A luminous story that made us treasure every chapter.',
-    rating: '★★★★☆',
-  },
-]
+function formatRating(familyRating: number | null | undefined) {
+  if (!familyRating && familyRating !== 0) return ''
+  return `${familyRating.toFixed(1)} ★`
+}
 
-const activityItems: ActivityItem[] = [
-  {
-    title: 'Kevin finished Chapter 18',
-    description: 'A perfect moment to pause and share thoughts before the next listen.',
-    time: 'Today · 8:24 PM',
-  },
-  {
-    title: 'Emma added Dune',
-    description: 'New audiobook queued for the next family adventure.',
-    time: 'Yesterday · 6:10 PM',
-  },
-  {
-    title: 'Liam rated Project Hail Mary ★★★★★',
-    description: 'A glowing family recommendation from our sci-fi fan.',
-    time: 'Monday · 4:50 PM',
-  },
-  {
-    title: 'Discussion scheduled Friday',
-    description: 'Save the date for our next shared listening conversation.',
-    time: 'This week',
-  },
-]
+function topGenre(genres: Array<string | null | undefined>) {
+  const counts = genres.reduce<Record<string, number>>((acc, genre) => {
+    if (!genre) return acc
+    acc[genre] = (acc[genre] ?? 0) + 1
+    return acc
+  }, {})
 
-const stats = [
-  {
-    icon: <BookOpen size={20} />,
-    label: 'Books completed',
-    value: '34',
-  },
-  {
-    icon: <Clock3 size={20} />,
-    label: 'Hours listened',
-    value: '142',
-  },
-  {
-    icon: <Heart size={20} />,
-    label: 'Favorite author',
-    value: 'J.R.R. Tolkien',
-  },
-  {
-    icon: <Sparkles size={20} />,
-    label: 'Top genre',
-    value: 'Fantasy',
-  },
-]
+  const winner = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
+  return winner?.[0] ?? ''
+}
 
 export function HomePage() {
+  const [currentBook, setCurrentBook] = useState<HeroBook | null>(null)
+  const [familyMembers, setFamilyMembers] = useState<Member[]>([])
+  const [nextAdventures, setNextAdventures] = useState<ShelfBook[]>([])
+  const [finishedBooks, setFinishedBooks] = useState<FinishedBook[]>([])
+  const [journeyItems, setJourneyItems] = useState<JourneyItem[]>([])
+  const [activityItems, setActivityItems] = useState<ActivityItem[]>([])
+  const [stats, setStats] = useState<StatItem[]>(emptyStats)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true)
+      setError(null)
+
+      const [{ data: books, error: booksError }, { data: members, error: membersError }, { data: statuses, error: statusesError }] =
+        await Promise.all([
+          supabase
+            .from('books')
+            .select('id,slug,title,author,genre,summary,family_rating,progress,status,started_date,completed_date,discussion_date,runtime')
+            .order('discussion_date', { ascending: true }),
+          supabase.from('family_members').select('id,name'),
+          supabase.from('member_book_status').select('member_id,book_id,finished,updated_at'),
+        ])
+
+      if (booksError || membersError || statusesError) {
+        setError('Unable to load library data from Supabase.')
+        setLoading(false)
+        return
+      }
+
+      const booksList = books ?? []
+      const membersList = members ?? []
+      const statusList = statuses ?? []
+      const bookById = new Map((booksList as any[]).map((book: any) => [book.id, book]))
+
+      const featuredBook =
+        (booksList as any[]).find((book: any) => book.status === 'current') ??
+        (booksList as any[]).find((book: any) => book.status !== 'want_to_read') ??
+        booksList[0]
+      if (featuredBook) {
+        setCurrentBook({
+          title: featuredBook.title,
+          author: featuredBook.author,
+          rating: formatRating(featuredBook.family_rating),
+          startedDate: formatDate(featuredBook.started_date),
+          discussionDate: formatDate(featuredBook.discussion_date),
+          progress: Number(featuredBook.progress ?? 0),
+          summary: featuredBook.summary ?? '',
+          genre: featuredBook.genre ?? '',
+          length: formatRuntime(featuredBook.runtime),
+          narrator: featuredBook.narrator ?? '',
+          finishedDate: formatDate(featuredBook.completed_date),
+          familyRating: featuredBook.family_rating ? featuredBook.family_rating.toFixed(1) : '',
+        })
+      }
+
+      const memberRows = (membersList as any[]).map((member: any) => {
+        const memberStatuses = (statusList as any[]).filter((status: any) => status.member_id === member.id)
+        const completedCount = memberStatuses.filter((status: any) => status.finished).length
+        const currentStatus = memberStatuses.find((status: any) => !status.finished)
+        const currentBook = currentStatus ? bookById.get(currentStatus.book_id) : null
+        const genres = memberStatuses.map((status: any) => bookById.get(status.book_id)?.genre).filter(Boolean)
+
+        return {
+          name: member.name,
+          initial: member.name?.slice(0, 1) ?? '',
+          booksCompleted: completedCount,
+          favoriteGenre: topGenre(genres),
+          currentlyListening: currentBook?.title ?? '',
+        }
+      })
+
+      const nextBooks = (booksList as any[])
+        .filter((book: any) => book.status === 'want_to_read')
+        .slice(0, 3)
+        .map((book: any) => ({
+          title: book.title,
+          author: book.author,
+          rating: formatRating(book.family_rating),
+          readingTime: formatRuntime(book.runtime),
+          discussionDate: formatDate(book.discussion_date),
+          description: book.summary ?? '',
+          slug: book.slug,
+        }))
+
+      const finishedBooksList = (booksList as any[])
+        .filter((book: any) => book.status === 'completed')
+        .map((book: any) => ({
+          title: book.title,
+          author: book.author,
+          discussionDate: formatDate(book.discussion_date),
+          rating: formatRating(book.family_rating),
+          quote: book.summary ?? '',
+          slug: book.slug,
+        }))
+
+      const timelineItems = (booksList as any[]).map((book: any) => ({
+        year: book.discussion_date ? new Date(book.discussion_date).getFullYear().toString() : '',
+        title: book.title,
+        discussionDate: formatDate(book.discussion_date),
+        notes: book.summary ?? '',
+        rating: formatRating(book.family_rating),
+      }))
+
+      const recentActivity = (statusList as any[])
+        .slice()
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        .slice(0, 4)
+        .map((status: any) => {
+          const book = bookById.get(status.book_id)
+          return {
+            title: book ? `${book.title} status updated` : 'Reading status updated',
+            description: book
+              ? `Family progress moved to ${book.progress ?? 0}% on ${book.title}.`
+              : 'A family listening update is available.',
+            time: status.updated_at ? new Date(status.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recent',
+          }
+        })
+
+      const completedBooks = finishedBooksList.length
+      const totalHours = (booksList as any[]).reduce((sum, book: any) => sum + Number(book.runtime ?? 0), 0)
+      const uniqueAuthors = Array.from(new Set((booksList as any[]).map((book) => book.author).filter(Boolean)))
+      const topGenreValue = topGenre((booksList as any[]).map((book) => book.genre))
+
+      setFamilyMembers(memberRows)
+      setNextAdventures(nextBooks)
+      setFinishedBooks(finishedBooksList)
+      setJourneyItems(timelineItems)
+      setActivityItems(recentActivity)
+      setStats([
+        { icon: <BookOpen size={20} />, label: 'Completed books', value: `${completedBooks}` },
+        { icon: <Clock3 size={20} />, label: 'Listening hours', value: `${Math.round(totalHours / 60)}` },
+        { icon: <Heart size={20} />, label: 'Most frequent author', value: uniqueAuthors[0] ?? 'Unknown' },
+        { icon: <Sparkles size={20} />, label: 'Leading genre', value: topGenreValue },
+      ])
+      setLoading(false)
+    }
+
+    loadData()
+  }, [])
+
+  if (loading) {
+    return (
+      <AppShell>
+        <section className="page-section">
+          <header className="page-header">
+            <p className="eyebrow">Loading</p>
+            <h1>Fetching your family library</h1>
+            <p className="intro-text">Connecting to Supabase and loading live data.</p>
+          </header>
+        </section>
+      </AppShell>
+    )
+  }
+
+  if (error) {
+    return (
+      <AppShell>
+        <section className="page-section">
+          <header className="page-header">
+            <p className="eyebrow">Connection issue</p>
+            <h1>{error}</h1>
+            <p className="intro-text">Please verify your Supabase credentials and try again.</p>
+          </header>
+        </section>
+      </AppShell>
+    )
+  }
+
   return (
     <AppShell>
       <header className="page-header page-header-premium">
@@ -169,7 +231,7 @@ export function HomePage() {
         </p>
       </header>
 
-      <HeroSection book={currentBook} />
+      {currentBook && <HeroSection book={currentBook} />}
       <FamilyGrid members={familyMembers} />
 
       <section className="section-block">

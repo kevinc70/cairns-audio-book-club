@@ -11,21 +11,25 @@ export function FamilyGrid({ members }: FamilyGridProps) {
         <p className="eyebrow">Our family</p>
         <h2>Stories are best when we share them.</h2>
       </div>
-      <div className="family-cards">
-        {members.map((member) => (
-          <article key={member.name} className="family-card">
-            <div className="family-avatar" aria-hidden="true">
-              {member.initial}
-            </div>
-            <div className="family-copy">
-              <h3>{member.name}</h3>
-              <p>{member.booksCompleted} books completed</p>
-              <p>{member.currentlyListening}</p>
-              <p className="family-meta">Favorite: {member.favoriteGenre}</p>
-            </div>
-          </article>
-        ))}
-      </div>
+      {members.length === 0 ? (
+        <p className="empty-state">No family member data is available yet.</p>
+      ) : (
+        <div className="family-cards">
+          {members.map((member) => (
+            <article key={member.name} className="family-card">
+              <div className="family-avatar" aria-hidden="true">
+                {member.initial}
+              </div>
+              <div className="family-copy">
+                <h3>{member.name}</h3>
+                <p>{member.booksCompleted} completed titles</p>
+                <p>{member.currentlyListening}</p>
+                <p className="family-meta">Favorite: {member.favoriteGenre}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
