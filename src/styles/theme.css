@@ -1,0 +1,17 @@
+:root {
+  color-scheme: light;
+  font-family: 'Inter', 'Avenir Next', system-ui, sans-serif;
+  --bg: #F7F4ED;
+  --surface: #ffffff;
+  --surface-soft: rgba(255, 255, 255, 0.82);
+  --accent: #234032;
+  --accent-soft: rgba(35, 64, 50, 0.12);
+  --accent-muted: rgba(35, 64, 50, 0.22);
+  --text: #2f2b22;
+  --text-muted: #575041;
+  --border: rgba(35, 64, 50, 0.12);
+  --shadow: 0 20px 40px rgba(35, 64, 50, 0.08);
+  --radius: 28px;
+  --radius-sm: 18px;
+  --max-width: 1200px;
+}
