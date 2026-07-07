@@ -5,6 +5,7 @@ export interface NavItem {
 }
 
 export interface Member {
+  id?: string
   name: string
   initial: string
   booksCompleted: number
@@ -20,6 +21,7 @@ export interface ShelfBook {
   discussionDate: string
   description: string
   slug?: string
+  coverUrl?: string
 }
 
 export interface FinishedBook {
@@ -29,6 +31,7 @@ export interface FinishedBook {
   rating: string
   quote: string
   slug?: string
+  coverUrl?: string
 }
 
 export interface JourneyItem {

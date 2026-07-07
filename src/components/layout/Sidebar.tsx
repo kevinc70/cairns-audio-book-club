@@ -1,11 +1,27 @@
 import type { NavItem } from '../../types'
+import { NavLink } from 'react-router-dom'
 
 const navItems: NavItem[] = [
   { id: 'home', label: 'Home', icon: '🏠' },
   { id: 'library', label: 'Library', icon: '📚' },
-  { id: 'wishlist', label: 'Want To Read', icon: '✨' },
+  { id: 'wishlist', label: 'Want to Read', icon: '✨' },
   { id: 'stats', label: 'Statistics', icon: '📈' },
 ]
+
+function pathFor(id: string) {
+  switch (id) {
+    case 'home':
+      return '/'
+    case 'library':
+      return '/library'
+    case 'wishlist':
+      return '/want-to-read'
+    case 'stats':
+      return '/stats'
+    default:
+      return '/'
+  }
+}
 
 export function Sidebar() {
   return (
@@ -22,10 +38,10 @@ export function Sidebar() {
           <ul className="sidebar-nav">
             {navItems.map((item) => (
               <li key={item.id}>
-                <a href={`#${item.id}`} className="sidebar-link">
+                <NavLink to={pathFor(item.id)} className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
                   <span aria-hidden="true">{item.icon}</span>
                   <span>{item.label}</span>
-                </a>
+                </NavLink>
               </li>
             ))}
           </ul>

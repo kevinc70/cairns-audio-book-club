@@ -1,16 +1,16 @@
 :root {
   color-scheme: light;
   font-family: 'Inter', 'Avenir Next', system-ui, sans-serif;
-  --bg: #F7F4ED;
-  --surface: #ffffff;
-  --surface-soft: rgba(255, 255, 255, 0.82);
-  --accent: #234032;
-  --accent-soft: rgba(35, 64, 50, 0.12);
-  --accent-muted: rgba(35, 64, 50, 0.22);
-  --text: #2f2b22;
-  --text-muted: #575041;
-  --border: rgba(35, 64, 50, 0.12);
-  --shadow: 0 20px 40px rgba(35, 64, 50, 0.08);
+  --bg: #050506;
+  --surface: #141416;
+  --surface-soft: rgba(24, 24, 27, 0.88);
+  --accent: #d6a84f;
+  --accent-soft: rgba(214, 168, 79, 0.14);
+  --accent-muted: rgba(214, 168, 79, 0.28);
+  --text: #f5f5f5;
+  --text-muted: #a5a5ad;
+  --border: rgba(255, 255, 255, 0.1);
+  --shadow: 0 20px 44px rgba(0, 0, 0, 0.35);
   --radius: 28px;
   --radius-sm: 18px;
   --max-width: 1200px;

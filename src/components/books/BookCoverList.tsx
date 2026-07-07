@@ -19,9 +19,17 @@ export default function BookCoverList({ items }: BookCoverListProps) {
           to={item.slug ? `/book/${item.slug}` : '/'}
           className="book-cover-card"
           role="listitem">
-          <div className="book-cover-placeholder" aria-hidden="true">
-            <span>Book cover</span>
-          </div>
+          {item.coverUrl ? (
+            <div
+              className="book-cover-image"
+              style={{ backgroundImage: `url(${item.coverUrl})` }}
+              aria-hidden="true"
+            />
+          ) : (
+            <div className="book-cover-placeholder" aria-hidden="true">
+              <span>Book cover</span>
+            </div>
+          )}
           <div className="book-cover-meta">
             <div className="book-cover-tag">
               <Star size={14} />

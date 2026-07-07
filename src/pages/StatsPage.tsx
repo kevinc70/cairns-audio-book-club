@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Clock3, Heart, Sparkles } from 'lucide-react'
 import { AppShell } from '../components/layout/AppShell'
 import { StatsCard } from '../components/stats/StatsCard'
+import { LoadingScreen } from '../components/ui/LoadingScreen'
 import { supabase } from '../lib/supabase'
 import type { ReactNode } from 'react'
 
@@ -70,7 +71,7 @@ export function StatsPage() {
         </header>
 
         {loading ? (
-          <p>Loading statistics...</p>
+          <LoadingScreen message="Turning the page..." />
         ) : error ? (
           <p className="error-text">{error}</p>
         ) : stats.length === 0 ? (

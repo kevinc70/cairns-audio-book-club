@@ -1,8 +1,10 @@
+import { NavLink } from 'react-router-dom'
+
 const items = [
-  { id: 'home', label: 'Home' },
-  { id: 'library', label: 'Library' },
-  { id: 'wishlist', label: 'Shelf' },
-  { id: 'stats', label: 'Stats' },
+  { id: 'home', label: 'Home', path: '/' },
+  { id: 'library', label: 'Library', path: '/library' },
+  { id: 'wishlist', label: 'Want to Read', path: '/want-to-read' },
+  { id: 'stats', label: 'Stats', path: '/stats' },
 ]
 
 export function BottomNav() {
@@ -11,9 +13,9 @@ export function BottomNav() {
       <ul>
         {items.map((item) => (
           <li key={item.id}>
-            <a href={`#${item.id}`} className="bottom-nav-link">
+            <NavLink to={item.path} className={({ isActive }) => `bottom-nav-link${isActive ? ' active' : ''}`}>
               {item.label}
-            </a>
+            </NavLink>
           </li>
         ))}
       </ul>
