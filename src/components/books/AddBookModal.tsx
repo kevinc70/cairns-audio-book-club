@@ -57,6 +57,7 @@ export default function AddBookModal({ open, onClose, onSaved }: AddBookModalPro
         title: t,
         author: a,
         cover_image_url: coverImageUrl?.trim() ? coverImageUrl.trim() : null,
+        cover_url: coverImageUrl?.trim() ? coverImageUrl.trim() : null,
         status,
         slug,
       }
@@ -100,9 +101,9 @@ export default function AddBookModal({ open, onClose, onSaved }: AddBookModalPro
   }
 
   return (
-    <div className="modal-backdrop">
+    <div className="inline-add-book-form">
       {saving ? <LoadingScreen message="Saving your story..." /> : null}
-      <div className="modal-card">
+      <div className="modal-card inline-add-book-card">
         <header className="modal-header">
           <h2>Add a Book</h2>
         </header>

@@ -173,6 +173,14 @@ export function LibraryPage() {
           </button>
         </div>
 
+        <AddBookModal
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSaved={() => {
+            loadBooks()
+          }}
+        />
+
         <div className="library-management-controls">
           <StatusFilterDropdown
             label="Status"
@@ -233,13 +241,6 @@ export function LibraryPage() {
           </div>
         )}
 
-        <AddBookModal
-          open={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onSaved={() => {
-            loadBooks()
-          }}
-        />
       </section>
     </AppShell>
   )

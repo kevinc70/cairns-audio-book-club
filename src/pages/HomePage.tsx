@@ -421,6 +421,14 @@ export function HomePage() {
           </button>
         </div>
 
+        <AddBookModal
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSaved={() => {
+            loadAdminBooks()
+          }}
+        />
+
         <div className="library-management-controls">
           <StatusFilterDropdown
             label="Status"
@@ -477,13 +485,6 @@ export function HomePage() {
 
         {adminError && <p className="error-text">{adminError}</p>}
 
-        <AddBookModal
-          open={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onSaved={() => {
-            loadAdminBooks()
-          }}
-        />
       </section>
 
       <FamilyGrid members={familyMembers} />

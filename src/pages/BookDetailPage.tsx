@@ -16,6 +16,7 @@ type DetailBook = {
   status: BookStatus
   discussionDate?: string | null
   coverUrl?: string | null
+  coverImageUrl: string
 }
 
 type MemberCard = {
@@ -195,6 +196,7 @@ export function BookDetailPage() {
         status: normalizeBookStatus(bookRow.status),
         discussionDate: bookRow.discussion_date,
         coverUrl: bookRow.cover_image_url ?? bookRow.cover_url,
+        coverImageUrl: bookRow.cover_image_url ?? bookRow.cover_url ?? '',
       })
       setMembers(memberCards)
       setDiscussion({
@@ -243,6 +245,26 @@ export function BookDetailPage() {
       if (error) throw error
     } catch (saveError) {
       console.error('Unable to save book status', saveError)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const saveCoverImageUrl = async (coverImageUrl = book?.coverImageUrl ?? '') => {
+    if (!book) return
+
+    const nextUrl = coverImageUrl.trim()
+    setBook((current) => (current ? { ...current, coverImageUrl: nextUrl, coverUrl: nextUrl || null } : current))
+
+    try {
+      setSaving(true)
+      const { error } = await supabase
+        .from('books')
+        .update({ cover_image_url: nextUrl || null, cover_url: nextUrl || null })
+        .eq('id', book.id)
+      if (error) throw error
+    } catch (saveError) {
+      console.error('Unable to save cover image URL', saveError)
     } finally {
       setSaving(false)
     }
@@ -367,7 +389,7 @@ export function BookDetailPage() {
         </section>
 
         <section className="detail-section">
-          <h2>Book Status</h2>
+          <h2>Book Details</h2>
           <article className="member-status-detail-card book-status-detail-card">
             <StatusFilterDropdown
               label="Status"
@@ -375,6 +397,22 @@ export function BookDetailPage() {
               options={BOOK_STATUS_OPTIONS}
               onChange={saveBookStatus}
             />
+            <label className="status-row">
+              <span>Cover Image URL</span>
+              <input
+                type="url"
+                value={book.coverImageUrl}
+                placeholder="https://...jpg"
+                onChange={(event) =>
+                  setBook((current) =>
+                    current
+                      ? { ...current, coverImageUrl: event.target.value, coverUrl: event.target.value || null }
+                      : current,
+                  )
+                }
+                onBlur={() => saveCoverImageUrl()}
+              />
+            </label>
           </article>
         </section>
 
