@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LoadingScreen } from '../ui/LoadingScreen'
+import { StatusFilterDropdown } from '../ui/StatusFilterDropdown'
 import { supabase } from '../../lib/supabase'
 import type { ShelfBook } from '../../types'
 
@@ -8,6 +9,15 @@ interface AddBookModalProps {
   onClose: () => void
   onSaved: (book: ShelfBook) => void
 }
+
+type BookStatus = 'want_to_read' | 'upcoming' | 'current' | 'completed'
+
+const BOOK_STATUS_OPTIONS: Array<{ value: BookStatus; label: string }> = [
+  { value: 'want_to_read', label: 'Want to Read' },
+  { value: 'upcoming', label: 'Upcoming' },
+  { value: 'current', label: 'Reading' },
+  { value: 'completed', label: 'Finished' },
+]
 
 function slugify(text: string) {
   return text
@@ -22,6 +32,7 @@ export default function AddBookModal({ open, onClose, onSaved }: AddBookModalPro
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [coverImageUrl, setCoverImageUrl] = useState('')
+  const [status, setStatus] = useState<BookStatus>('want_to_read')
   const [saving, setSaving] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -46,7 +57,7 @@ export default function AddBookModal({ open, onClose, onSaved }: AddBookModalPro
         title: t,
         author: a,
         cover_image_url: coverImageUrl?.trim() ? coverImageUrl.trim() : null,
-        status: 'Want to Read',
+        status,
         slug,
       }
 
@@ -78,6 +89,7 @@ export default function AddBookModal({ open, onClose, onSaved }: AddBookModalPro
       setTitle('')
       setAuthor('')
       setCoverImageUrl('')
+      setStatus('want_to_read')
     } catch (error) {
       console.error('Failed to save book', error)
       const message = error instanceof Error ? error.message : String(error)
@@ -109,6 +121,13 @@ export default function AddBookModal({ open, onClose, onSaved }: AddBookModalPro
             <span className="field-label">Cover image URL</span>
             <input placeholder="https://...jpg (optional)" value={coverImageUrl} onChange={(e) => setCoverImageUrl(e.target.value)} />
           </label>
+
+          <StatusFilterDropdown
+            label="Status"
+            value={status}
+            options={BOOK_STATUS_OPTIONS}
+            onChange={setStatus}
+          />
 
           {errorMessage && <p className="error-text">{errorMessage}</p>}
         </div>

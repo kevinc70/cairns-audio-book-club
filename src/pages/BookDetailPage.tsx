@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { LoadingScreen } from '../components/ui/LoadingScreen'
 import { StatusFilterDropdown } from '../components/ui/StatusFilterDropdown'
@@ -7,11 +7,13 @@ import { supabase } from '../lib/supabase'
 
 type Availability = '' | 'not_available' | 'available_now' | 'signed_out' | 'read_already' | 'not_interested'
 type OnHoldSelection = '' | 'yes' | 'no'
+type BookStatus = 'want_to_read' | 'upcoming' | 'current' | 'completed'
 
 type DetailBook = {
   id: string
   title: string
   author?: string | null
+  status: BookStatus
   discussionDate?: string | null
   coverUrl?: string | null
 }
@@ -55,6 +57,13 @@ const ON_HOLD_OPTIONS: Array<{ value: OnHoldSelection; label: string }> = [
   { value: 'no', label: 'No' },
 ]
 
+const BOOK_STATUS_OPTIONS: Array<{ value: BookStatus; label: string }> = [
+  { value: 'want_to_read', label: 'Want to Read' },
+  { value: 'upcoming', label: 'Upcoming' },
+  { value: 'current', label: 'Reading' },
+  { value: 'completed', label: 'Finished' },
+]
+
 function formatDate(date: string | null | undefined) {
   if (!date) return ''
   const dateOnlyMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})/)
@@ -72,6 +81,14 @@ function formatInputDate(date: string | null | undefined) {
   const parsed = new Date(date)
   if (Number.isNaN(parsed.getTime())) return ''
   return parsed.toISOString().slice(0, 10)
+}
+
+function normalizeBookStatus(status: string | null | undefined): BookStatus {
+  const normalized = (status ?? '').toLowerCase().replaceAll(' ', '_')
+  if (normalized === 'upcoming') return 'upcoming'
+  if (normalized === 'reading' || normalized === 'current') return 'current'
+  if (normalized === 'finished' || normalized === 'completed') return 'completed'
+  return 'want_to_read'
 }
 
 function payloadFromMember(bookId: string, member: MemberCard) {
@@ -127,7 +144,7 @@ export function BookDetailPage() {
 
       const { data: bookRow, error: bookError } = await supabase
         .from('books')
-        .select('id,title,author,discussion_date,cover_url,cover_image_url')
+        .select('id,title,author,status,discussion_date,cover_url,cover_image_url')
         .eq('slug', id)
         .single()
 
@@ -175,6 +192,7 @@ export function BookDetailPage() {
         id: bookRow.id,
         title: bookRow.title,
         author: bookRow.author,
+        status: normalizeBookStatus(bookRow.status),
         discussionDate: bookRow.discussion_date,
         coverUrl: bookRow.cover_image_url ?? bookRow.cover_url,
       })
@@ -209,6 +227,22 @@ export function BookDetailPage() {
       )
     } catch (saveError) {
       console.error('Unable to save member status', saveError)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const saveBookStatus = async (status: BookStatus) => {
+    if (!book) return
+
+    setBook((current) => (current ? { ...current, status } : current))
+
+    try {
+      setSaving(true)
+      const { error } = await supabase.from('books').update({ status }).eq('id', book.id)
+      if (error) throw error
+    } catch (saveError) {
+      console.error('Unable to save book status', saveError)
     } finally {
       setSaving(false)
     }
@@ -311,6 +345,10 @@ export function BookDetailPage() {
       {uploadingPhotos ? <LoadingScreen message="Adding memories..." /> : null}
       {openingDiscussion ? <LoadingScreen message="Opening discussion..." /> : null}
       <article className="book-detail-page simple-book-detail">
+        <Link className="btn detail-back-link" to="/">
+          Back Home
+        </Link>
+
         <section className="detail-hero-simple">
           {book.coverUrl ? (
             <img src={book.coverUrl} alt={`${book.title} cover`} className="detail-hero-cover" />
@@ -326,6 +364,18 @@ export function BookDetailPage() {
               <p className="detail-discussion-date">Discussion: {formatDate(book.discussionDate)}</p>
             ) : null}
           </div>
+        </section>
+
+        <section className="detail-section">
+          <h2>Book Status</h2>
+          <article className="member-status-detail-card book-status-detail-card">
+            <StatusFilterDropdown
+              label="Status"
+              value={book.status}
+              options={BOOK_STATUS_OPTIONS}
+              onChange={saveBookStatus}
+            />
+          </article>
         </section>
 
         {!book.discussionDate ? (

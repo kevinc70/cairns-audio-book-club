@@ -78,6 +78,21 @@
   height: 48px;
 }
 
+.btn {
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .app-main {
   width: 100%;
   max-width: 100%;
@@ -1681,6 +1696,14 @@ a {
   display: grid;
   gap: 16px;
   padding: 20px;
+}
+
+.book-status-detail-card {
+  max-width: 360px;
+}
+
+.detail-back-link {
+  justify-self: start;
 }
 
 .member-status-detail-card h3,

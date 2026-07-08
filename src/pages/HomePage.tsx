@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import { BookCarousel, type BookCarouselItem } from '../components/books/BookCarousel'
 import { FamilyGrid } from '../components/books/FamilyGrid'
@@ -19,12 +20,13 @@ type AdminBookRow = {
   slug?: string
 }
 
-type StatusFilter = 'all' | 'want_to_read' | 'current' | 'completed'
+type StatusFilter = 'all' | 'want_to_read' | 'upcoming' | 'current' | 'completed'
 type SortConfig = { key: 'title' | 'discussionDate'; direction: 'asc' | 'desc' } | null
 
 const STATUS_FILTER_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'want_to_read', label: 'Want to Read' },
+  { value: 'upcoming', label: 'Upcoming' },
   { value: 'current', label: 'Reading' },
   { value: 'completed', label: 'Finished' },
 ]
@@ -42,6 +44,7 @@ function formatDate(date: string | null | undefined) {
 function statusGroup(status: string | null | undefined): StatusFilter {
   const normalized = (status ?? '').toLowerCase().replaceAll(' ', '_')
   if (normalized === 'want_to_read') return 'want_to_read'
+  if (normalized === 'upcoming') return 'upcoming'
   if (normalized === 'reading' || normalized === 'current') return 'current'
   if (normalized === 'finished' || normalized === 'completed') return 'completed'
   return 'all'
@@ -50,6 +53,7 @@ function statusGroup(status: string | null | undefined): StatusFilter {
 function statusLabel(status: string | null | undefined) {
   const group = statusGroup(status)
   if (group === 'want_to_read') return 'Want to Read'
+  if (group === 'upcoming') return 'Upcoming'
   if (group === 'current') return 'Reading'
   if (group === 'completed') return 'Finished'
   return status || 'Unknown'
@@ -200,7 +204,7 @@ export function HomePage() {
       })
 
       const finishedBooksList = (booksList as any[])
-        .filter((book: any) => book.status === 'completed')
+        .filter((book: any) => statusGroup(book.status) === 'completed')
         .sort((a: any, b: any) => {
           if (!a.discussion_date && !b.discussion_date) return 0
           if (!a.discussion_date) return 1
@@ -240,9 +244,7 @@ export function HomePage() {
         .map(({ sortValue, ...book }: any) => book)
 
       const upcomingBooksList = (booksList as any[])
-        .filter((book: any) =>
-          statusGroup(book.status) === 'want_to_read' && book.discussion_date
-        )
+        .filter((book: any) => statusGroup(book.status) === 'upcoming')
         .sort((a: any, b: any) => new Date(a.discussion_date).getTime() - new Date(b.discussion_date).getTime())
         .map((book: any) => ({
           title: book.title,
@@ -354,6 +356,7 @@ export function HomePage() {
   return (
     <AppShell>
       {deleting ? <LoadingScreen message="Closing the book..." /> : null}
+      <div className="home-page">
       <section className="section-block current-reading-hero">
         <p className="current-reading-label">BOOK WE'RE READING</p>
         {currentReadingBook ? (
@@ -454,6 +457,9 @@ export function HomePage() {
                   <td>{statusLabel(book.status)}</td>
                   <td>{formatDate(book.discussionDate)}</td>
                   <td>
+                    <Link className="btn mobile-edit-button" to={book.slug ? `/book/${book.slug}` : '/library'}>
+                      Edit
+                    </Link>
                     <button
                       className="btn delete-book-button"
                       type="button"
@@ -481,6 +487,7 @@ export function HomePage() {
       </section>
 
       <FamilyGrid members={familyMembers} />
+      </div>
     </AppShell>
   )
 }

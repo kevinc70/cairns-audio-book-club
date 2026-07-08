@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
 import AddBookModal from '../components/books/AddBookModal'
 import { LoadingScreen } from '../components/ui/LoadingScreen'
@@ -15,12 +16,13 @@ type AdminBookRow = {
   slug?: string
 }
 
-type StatusFilter = 'all' | 'want_to_read' | 'current' | 'completed'
+type StatusFilter = 'all' | 'want_to_read' | 'upcoming' | 'current' | 'completed'
 type SortConfig = { key: 'title' | 'discussionDate'; direction: 'asc' | 'desc' } | null
 
 const STATUS_FILTER_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'want_to_read', label: 'Want to Read' },
+  { value: 'upcoming', label: 'Upcoming' },
   { value: 'current', label: 'Reading' },
   { value: 'completed', label: 'Finished' },
 ]
@@ -38,6 +40,7 @@ function formatDate(date: string | null | undefined) {
 function statusGroup(status: string | null | undefined): StatusFilter {
   const normalized = (status ?? '').toLowerCase().replaceAll(' ', '_')
   if (normalized === 'want_to_read') return 'want_to_read'
+  if (normalized === 'upcoming') return 'upcoming'
   if (normalized === 'reading' || normalized === 'current') return 'current'
   if (normalized === 'finished' || normalized === 'completed') return 'completed'
   return 'all'
@@ -46,6 +49,7 @@ function statusGroup(status: string | null | undefined): StatusFilter {
 function statusLabel(status: string | null | undefined) {
   const group = statusGroup(status)
   if (group === 'want_to_read') return 'Want to Read'
+  if (group === 'upcoming') return 'Upcoming'
   if (group === 'current') return 'Reading'
   if (group === 'completed') return 'Finished'
   return status || 'Unknown'
@@ -209,6 +213,9 @@ export function LibraryPage() {
                     <td>{book.author ?? '-'}</td>
                     <td>{statusLabel(book.status)}</td>
                     <td>
+                      <Link className="btn" to={book.slug ? `/book/${book.slug}` : '/library'}>
+                        Edit
+                      </Link>
                       <button
                         className="btn delete-book-button"
                         type="button"
